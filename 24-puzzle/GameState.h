@@ -4,6 +4,8 @@
 #include "Heuristic.h"
 #include "GameStateArray.h"
 
+using namespace Heuristics;
+
 static constexpr uint8_t calculateGodDigit(uint8_t dimensity) {
     uint8_t res = 0;
     switch (dimensity)
@@ -56,6 +58,8 @@ public:
         const CompactMoveStorage& m = CompactMoveStorage(),
         Heuristic h = Heuristic::MANHATTAN);
 
+    GameState(const GameState& parent, uint8_t new_empty_pos, char move_dir, Heuristic h = Heuristic::MANHATTAN);
+
     GameState() = default;
 
     // Объявления методов
@@ -74,6 +78,3 @@ public:
 // Объявления внешних переменных и функций
 extern std::vector<const char*> vec4;
 extern std::vector<const char*> vec5;
-
-// Объявление функции
-//bool check_solvability(const char state[SIZE_OF_FIELD]);

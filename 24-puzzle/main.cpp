@@ -10,6 +10,7 @@
 #include "GameState.h"
 
 using namespace std;
+using namespace Heuristics;
 
 static bool check_solvability(const char state[SIZE_OF_FIELD]) {
     int inversions = 0;
@@ -38,6 +39,7 @@ static bool check_solvability(const char state[SIZE_OF_FIELD]) {
         return (inversions + empty_row + 1) % 2 == 0;
     else return inversions % 2 == 0;
 }
+
 static void charToValues(GameState& gameState) {
     for (int i = 0; i < SIZE_OF_FIELD; ++i) {
         if (gameState.gameState.state[i] == '0') {
@@ -46,6 +48,17 @@ static void charToValues(GameState& gameState) {
         }
         gameState.gameState.state[i] = (gameState.gameState.state[i] >= '1' && gameState.gameState.state[i] <= '9')
             ? (gameState.gameState.state[i] - '0') : (gameState.gameState.state[i] - 'A' + 10);
+    }
+}
+
+static void charToValues(GameStateArray& gameState) {
+    for (int i = 0; i < SIZE_OF_FIELD; ++i) {
+        if (gameState.state[i] == '0') {
+            gameState.state[i] = SIZE_OF_FIELD;
+            continue;
+        }
+        gameState.state[i] = (gameState.state[i] >= '1' && gameState.state[i] <= '9')
+            ? (gameState.state[i] - '0') : (gameState.state[i] - 'A' + 10);
     }
 }
 
@@ -77,9 +90,10 @@ struct Solution {
 static Solution solveAStar(const char start_state[SIZE_OF_FIELD], int& states_explored, Heuristic heuristic_type) {
     Solution solution;
     uint8_t empty_pos = get_emptyPos(start_state);
+    GameStateArray gsa(start_state);
+    charToValues(gsa);
 
-    GameState start_game_state(start_state, empty_pos, 0, {}, heuristic_type);
-    charToValues(start_game_state);
+    GameState start_game_state(gsa, empty_pos, 0, {}, heuristic_type);
 
     if (start_game_state.isSolved())
         return solution;
@@ -212,8 +226,8 @@ struct Algorithm {
 Algorithm algorithms[] = {
     Algorithm("A* Manhattan", [](const char* state, int& explored) { return solveAStar(state, explored, Heuristic::MANHATTAN); }),
     Algorithm("A* linear", [](const char* state, int& explored) { return solveAStar(state, explored, Heuristic::LINEAR_CONFLICT); }),
-    Algorithm("A* corner", [](const char* state, int& explored) { return solveAStar(state, explored, Heuristic::CORNER_CONFLICTS); }),
-    Algorithm("A* corner&linear", [](const char* state, int& explored) { return solveAStar(state, explored, Heuristic::CORNER_LINEAR_CONFLICTS); }),
+    //Algorithm("A* corner", [](const char* state, int& explored) { return solveAStar(state, explored, Heuristic::CORNER_CONFLICTS); }),
+    //Algorithm("A* corner&linear", [](const char* state, int& explored) { return solveAStar(state, explored, Heuristic::CORNER_LINEAR_CONFLICTS); }),
 };
 
 static Solution execute(Algorithm alg, const char input[SIZE_OF_FIELD], ofstream& output) {
