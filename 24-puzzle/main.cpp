@@ -6,358 +6,10 @@
 #include <algorithm>
 #include <functional>
 #include <chrono>
+#include "Heuristic.h"
+#include "GameState.h"
 
 using namespace std;
-
-static constexpr uint16_t calculateGodDigit(uint8_t dimensity) {
-    uint16_t res = 0;
-    switch (dimensity)
-    {
-    case 3: res = 31; break;
-    case 4: res = 80; break;
-    case 5: res = 210; break;
-    case 6: res = 358; break;
-    default:
-        break;
-    }
-    return res;
-}
-
-const uint8_t DIMENSITY = 4;
-const uint8_t SIZE_OF_FIELD = DIMENSITY * DIMENSITY;
-const uint16_t GOD_DIGIT = calculateGodDigit(DIMENSITY);
-char solved[SIZE_OF_FIELD];
-
-const uint8_t directions[4][2] = { {-1, 0}, {0, 1}, {1, 0}, {0, -1} };
-const char moveChars[4] = { 'U', 'R', 'D', 'L' };
-
-// A=10, B=11, C=12, D=13, E=14, F=15, G=16, H=17, I=18, J=19, 
-// K=20, L=21, M=22, N=23, O=24, P=25, Q=26, R=27, S=28, T=29, 
-// U=30, V=31, W=32, X=33, Y=34, Z=35
-
-vector<const char*> vec4 = {
-    //"1234067859ACDEBF", // 5
-    //"7023168459ACDEBF", // 15
-    //"7283160459ACDEBF", // 17
-    //"7283106459ACDEBF", // 18
-    //"12345678A0BE9FCD", // 19 
-    //"F2345678A0BE91DC", // 33
-    "75AB2C416D389F0E", // 45
-    "FE169B4C0A73D852", // 52
-    "D79F2E8A45106C3B", // 55
-    //"BAC0F478E19623D5", // 61
-};
-
-vector<const char*> vec5 = {
-    //"123456789ABCDEFGHIJ0LMNOK", // 1
-    "123456789ABCDEFGHIJKLMN0O", // 1
-    //"F63M09LE51BO27IDNJACH48KG", // 1
-    "D7IMLOB2H18N4035CG9KFJ6EA", // 69
-    //"K12HACBO6G9E4L63JM07FDNI5", //
-    //"DGC8A25HIJLM0ENB67F19KO43", //
-    //"JOHIF9AL8B2E063G7M5K4CD1N", //
-};
-
-enum class Heuristic : uint8_t {
-    MANHATTAN,
-    LINEAR_CONFLICT,
-    CORNER_CONFLICTS,
-    CORNER_LINEAR_CONFLICTS,
-};
-
-struct GameStateArray {
-    char state[SIZE_OF_FIELD];
-
-    GameStateArray(const char st[SIZE_OF_FIELD]) {
-        memcpy(state, st, SIZE_OF_FIELD);
-    }
-
-    GameStateArray() = default;
-
-
-    bool operator==(const GameStateArray& other) const {
-        return memcmp(state, other.state, SIZE_OF_FIELD) == 0;
-    }
-};
-
-struct GameStateArrayHash {
-    size_t operator()(const GameStateArray& gsa) const {
-        size_t hash = 0;
-        for (int i = 0; i < SIZE_OF_FIELD; ++i) {
-            hash = hash * 31 + gsa.state[i];
-        }
-        return hash;
-    }
-};
-
-class CompactMoveStorage {
-private:
-    static constexpr uint8_t BITS_PER_MOVE = 2;                                                 // 2 бита = 4 варианта хода
-    static constexpr uint8_t MOVES_PER_CHAR = 8 / BITS_PER_MOVE;                                // 4 хода на байт
-    static constexpr uint16_t BUFFER_SIZE = (GOD_DIGIT + MOVES_PER_CHAR - 1) / MOVES_PER_CHAR;  // кол-во байт
-
-    char buffer[BUFFER_SIZE] = { 0 };
-    uint16_t moves_count = 0;
-public:
-    CompactMoveStorage() = default;
-
-    // Добавление хода (0-3 соответствует U,R,D,L)
-    void addMove(uint8_t move) {
-        if (moves_count >= GOD_DIGIT) return;
-
-        uint8_t char_index = moves_count / MOVES_PER_CHAR;
-        uint8_t bit_offset = (moves_count % MOVES_PER_CHAR) * BITS_PER_MOVE;
-
-        buffer[char_index] &= ~(0x03 << bit_offset);        // очищаем 2 бита: 0x03 в двоичном виде = 00000011.
-                                                            // 0x03 << 6 = 00000011 << 6 = 11000000
-                                                            // ~(0x03 << 6) = ~11000000 = 00111111
-        buffer[char_index] |= (move & 0x03) << bit_offset;  // записываем новое значение
-
-        ++moves_count;
-    }
-
-    uint8_t getMove(uint8_t index) const {
-        if (index >= moves_count) return 0;
-
-        uint8_t char_index = index / MOVES_PER_CHAR;
-        uint8_t bit_offset = (index % MOVES_PER_CHAR) * BITS_PER_MOVE;
-
-        return (buffer[char_index] >> bit_offset) & 0x03; //(11000110 >> 6) = 00000011. (00000011 & 0x03) = (00000011 & 00000011) = 00000011 = 3
-    }
-
-    char getMoveChar(uint8_t index) const {
-        uint8_t move = getMove(index);
-        return moveChars[move];
-    }
-
-    void copyFrom(const CompactMoveStorage& other, uint16_t count) {
-        moves_count = count;
-        memcpy(buffer, other.buffer, (count + MOVES_PER_CHAR - 1) / MOVES_PER_CHAR);
-    }
-
-    void copyToChars(char* dest) const {
-        for (size_t i = 0; i < moves_count; ++i) {
-            dest[i] = getMoveChar(i);
-        }
-    }
-
-    size_t getMovesCount() const { return moves_count; }
-};
-
-class GameState {
-public:
-    GameStateArray gameState;
-    uint8_t empty_pos;
-    short g_cost;
-    short h_cost;
-    CompactMoveStorage moves;
-    Heuristic heuristic_type;
-
-    GameState(GameStateArray st, uint8_t empty, short g = 0,
-        const CompactMoveStorage& m = {}, Heuristic h = Heuristic::MANHATTAN)
-        : gameState(st), empty_pos(empty), g_cost(g), heuristic_type(h)
-    {
-        moves.copyFrom(m, m.getMovesCount());
-        h_cost = calculateHeuristic();
-    }
-
-    GameState() = default;
-
-    short calculateHeuristic() const {
-        switch (heuristic_type) {
-        case Heuristic::MANHATTAN:
-            return calculateManhattanDistance();
-        case Heuristic::LINEAR_CONFLICT:
-            return calculateLinearConflict();
-        case Heuristic::CORNER_CONFLICTS:
-            return calculateCornerConflict();
-        case Heuristic::CORNER_LINEAR_CONFLICTS:
-            return calculateCornerLinearConflict();
-        default:
-            return calculateManhattanDistance();
-        }
-    }
-
-    short calculateManhattanDistance() const {
-        short distance = 0;
-        for (short i = 0; i < SIZE_OF_FIELD; ++i) {
-            if (i == empty_pos) continue;
-
-            uint8_t target_row = (gameState.state[i] - 1) / DIMENSITY;
-            uint8_t target_col = (gameState.state[i] - 1) % DIMENSITY;
-            uint8_t current_row = i / DIMENSITY;
-            uint8_t current_col = i % DIMENSITY;
-
-            distance += abs(target_row - current_row) + abs(target_col - current_col);
-        }
-        return distance;
-    }
-
-    short calculateLinearConflict() const {
-        return calculateManhattanDistance() + calculateLinearConflicts();
-    }
-
-    uint8_t calculateLinearConflicts() const {
-        uint8_t conflicts = 0;
-
-        uint8_t tiles[DIMENSITY]{};
-
-        for (uint8_t row = 0; row < DIMENSITY; ++row) {
-            uint8_t count = 0;
-
-            for (uint8_t col = 0; col < DIMENSITY; ++col) {
-                uint8_t pos = row * DIMENSITY + col;
-                if (pos == empty_pos) continue;
-
-                uint8_t tile = gameState.state[pos];
-                uint8_t target_row = (tile - 1) / DIMENSITY;
-
-                if (target_row == row) {
-                    tiles[count++] = (tile - 1) % DIMENSITY;
-                }
-            }
-
-            for (uint8_t i = 0; i < count; ++i) {
-                for (uint8_t j = i + 1; j < count; ++j) {
-                    if (tiles[i] > tiles[j]) {
-                        ++conflicts;
-                    }
-                }
-            }
-        }
-
-        for (uint8_t col = 0; col < DIMENSITY; ++col) {
-            uint8_t count = 0;
-
-            for (uint8_t row = 0; row < DIMENSITY; ++row) {
-                uint8_t pos = row * DIMENSITY + col;
-                if (pos == empty_pos) continue;
-
-                uint8_t tile = gameState.state[pos];
-                uint8_t target_col = (tile - 1) % DIMENSITY;
-
-                if (target_col == col) {
-                    tiles[count++] = (tile - 1) / DIMENSITY;
-                }
-            }
-
-            for (uint8_t i = 0; i < count; ++i) {
-                for (uint8_t j = i + 1; j < count; ++j) {
-                    if (tiles[i] > tiles[j]) {
-                        ++conflicts;
-                    }
-                }
-            }
-        }
-
-        return conflicts << 1; // *2
-    }
-
-    short calculateCornerConflict() const {
-        return calculateManhattanDistance() + calculateCornerConflicts();
-    }
-
-    short calculateCornerLinearConflict() const {
-        return calculateLinearConflict() + calculateCornerConflicts();
-    }
-
-    short calculateCornerConflicts() const {
-        uint8_t res = 0;
-        uint8_t corner1 = 0;
-        uint8_t corner1R = 1;
-        uint8_t corner1D = DIMENSITY;
-        uint8_t corner2 = DIMENSITY - 1;
-        uint8_t corner2L = DIMENSITY - 2;
-        uint8_t corner2D = DIMENSITY << 1 - 1;
-        uint8_t corner3 = DIMENSITY * (DIMENSITY - 1);
-        uint8_t corner3R = DIMENSITY * (DIMENSITY - 1) + 1;
-        uint8_t corner3U = DIMENSITY * (DIMENSITY - 2);
-
-        // Значение в клетке должно быть на 1 больше индекса
-        //if (!(gameState.state[corner1] == SIZE_OF_FIELD || gameState.state[corner1] == 1)) {
-        if (!(gameState.state[corner1D] == SIZE_OF_FIELD || gameState.state[corner1] == SIZE_OF_FIELD || gameState.state[corner1R] == SIZE_OF_FIELD || gameState.state[corner1] == 1)) {
-            if (gameState.state[corner1R] == 2) {
-                if (gameState.state[corner1D] == corner1D + 1)
-                    res += 2;
-                else ++res;
-            }
-            else if (gameState.state[corner1D] == corner1D + 1)
-                ++res;
-        }
-
-        //if (!(gameState.state[corner2] == SIZE_OF_FIELD || gameState.state[corner2] == DIMENSITY)) {
-        if (!(gameState.state[corner2L] == SIZE_OF_FIELD || gameState.state[corner2] == SIZE_OF_FIELD || gameState.state[corner2D] == SIZE_OF_FIELD || gameState.state[corner2] == DIMENSITY)) {
-            if (gameState.state[corner2L] == corner2) {
-                if (gameState.state[corner2D] == DIMENSITY << 1)
-                    res += 2;
-                else ++res;
-            }
-            else if (gameState.state[corner2D] == DIMENSITY << 1)
-                ++res;
-        }
-        //if (!(gameState.state[corner3] == SIZE_OF_FIELD || gameState.state[corner3] == corner3R)) {
-        if (!(gameState.state[corner3U] == SIZE_OF_FIELD || gameState.state[corner3] == SIZE_OF_FIELD || gameState.state[corner3R] == SIZE_OF_FIELD || gameState.state[corner3] == corner3R)) {
-            if (gameState.state[corner3U] == corner3U + 1) {
-                if (gameState.state[corner3R] == corner3R + 1)
-                    res += 2;
-                else ++res;
-            }
-            else if (gameState.state[corner3R] == corner3R + 1)
-                ++res;
-        }
-        return res << 1; // *2
-    }
-
-    short getFCost() const {
-        return g_cost + h_cost;
-    }
-
-    bool isSolved() const {
-        return memcmp(gameState.state, solved, SIZE_OF_FIELD) == 0;
-    }
-
-    GameState* getNextStates(uint8_t& count) const {
-        static GameState nextStates[4];
-        count = 0;
-        uint8_t row = empty_pos / DIMENSITY;
-        uint8_t col = empty_pos % DIMENSITY;
-
-        for (uint8_t i = 0; i < 4; ++i) {
-            uint8_t new_row = row + directions[i][0];
-            uint8_t new_col = col + directions[i][1];
-
-            if (new_row >= 0 && new_row < DIMENSITY && new_col >= 0 && new_col < DIMENSITY) {
-                uint8_t new_pos = new_row * DIMENSITY + new_col;
-
-                GameStateArray new_state_array(gameState.state);
-                std::swap(new_state_array.state[empty_pos], new_state_array.state[new_pos]);
-
-                nextStates[count] = GameState(new_state_array, new_pos, g_cost + 1, moves, heuristic_type);
-                nextStates[count].moves.addMove(i);
-                ++count;
-            }
-        }
-        return nextStates;
-    }
-
-    short getMovesCount() const {
-        return moves.getMovesCount();
-    }
-
-    bool operator>(const GameState& other) const {
-        return getFCost() > other.getFCost();
-    }
-
-    bool operator==(const GameState& other) const {
-        return gameState == other.gameState;
-    }
-
-    struct Hash {
-        size_t operator()(const GameState& gs) const {
-            return GameStateArrayHash()(gs.gameState.state);
-        }
-    };
-};
 
 static bool check_solvability(const char state[SIZE_OF_FIELD]) {
     int inversions = 0;
@@ -386,6 +38,16 @@ static bool check_solvability(const char state[SIZE_OF_FIELD]) {
         return (inversions + empty_row + 1) % 2 == 0;
     else return inversions % 2 == 0;
 }
+static void charToValues(GameState& gameState) {
+    for (int i = 0; i < SIZE_OF_FIELD; ++i) {
+        if (gameState.gameState.state[i] == '0') {
+            gameState.gameState.state[i] = SIZE_OF_FIELD;
+            continue;
+        }
+        gameState.gameState.state[i] = (gameState.gameState.state[i] >= '1' && gameState.gameState.state[i] <= '9')
+            ? (gameState.gameState.state[i] - '0') : (gameState.gameState.state[i] - 'A' + 10);
+    }
+}
 
 static inline int get_emptyPos(const char state[SIZE_OF_FIELD]) {
     int empty_pos = -1;
@@ -396,17 +58,6 @@ static inline int get_emptyPos(const char state[SIZE_OF_FIELD]) {
         }
     }
     return empty_pos;
-}
-
-static void charToValues(GameState& gameState) {
-    for (int i = 0; i < SIZE_OF_FIELD; ++i) {
-        if (gameState.gameState.state[i] == '0') {
-            gameState.gameState.state[i] = SIZE_OF_FIELD;
-            continue;
-        }
-        gameState.gameState.state[i] = (gameState.gameState.state[i] >= '1' && gameState.gameState.state[i] <= '9')
-            ? (gameState.gameState.state[i] - '0') : (gameState.gameState.state[i] - 'A' + 10);
-    }
 }
 
 struct Solution {
@@ -456,7 +107,7 @@ static Solution solveAStar(const char start_state[SIZE_OF_FIELD], int& states_ex
                 continue;
 
             if (neighbors[i].isSolved()) {
-                solution.moves.copyFrom(neighbors[i].moves, neighbors[i].getMovesCount());
+                solution.moves.copyFrom(neighbors[i].moves);
                 return solution;
             }
 
@@ -655,9 +306,6 @@ static void many_input_all_alg() {
 
 int main() {
     setlocale(LC_ALL, "ru");
-
-    for (short i = 0; i < SIZE_OF_FIELD; ++i)
-        solved[i] = i + 1;
 
     //user_input_all_alg();
     many_input_all_alg();

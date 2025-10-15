@@ -127,7 +127,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="GameState.cpp" />
+    <ClCompile Include="GameStateArray.cpp" />
+    <ClCompile Include="Heuristic.cpp" />
     <ClCompile Include="main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="GameState.h" />
+    <ClInclude Include="GameStateArray.h" />
+    <ClInclude Include="Heuristic.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
