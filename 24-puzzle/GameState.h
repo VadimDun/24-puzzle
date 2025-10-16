@@ -71,7 +71,3 @@ public:
         size_t operator()(const GameState& gs) const;
     };
 };
-
-// Объявления внешних переменных и функций
-extern std::vector<const char*> vec4;
-extern std::vector<const char*> vec5;

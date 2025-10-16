@@ -7,33 +7,6 @@ using namespace Heuristics;
 const int directions[4][2] = { {-1, 0}, {0, 1}, {1, 0}, {0, -1} };
 const char moveChars[4] = { 'U', 'R', 'D', 'L' };
 
-// A=10, B=11, C=12, D=13, E=14, F=15, G=16, H=17, I=18, J=19, 
-// K=20, L=21, M=22, N=23, O=24, P=25, Q=26, R=27, S=28, T=29, 
-// U=30, V=31, W=32, X=33, Y=34, Z=35
-
-vector<const char*> vec4 = {
-    //"1234067859ACDEBF", // 5
-    //"7023168459ACDEBF", // 15
-    //"7283160459ACDEBF", // 17
-    //"7283106459ACDEBF", // 18
-    "12345678A0BE9FCD", // 19 
-    "F2345678A0BE91DC", // 33
-    "75AB2C416D389F0E", // 45
-    "FE169B4C0A73D852", // 52
-    "D79F2E8A45106C3B", // 55
-    //"BAC0F478E19623D5", // 61
-};
-
-vector<const char*> vec5 = {
-    //"123456789ABCDEFGHIJ0LMNOK", // 1
-    "123456789ABCDEFGHIJKLMN0O", // 1
-    //"F63M09LE51BO27IDNJACH48KG", // 1
-    "D7IMLOB2H18N4035CG9KFJ6EA", // 69
-    //"K12HACBO6G9E4L63JM07FDNI5", //
-    //"DGC8A25HIJLM0ENB67F19KO43", //
-    //"JOHIF9AL8B2E063G7M5K4CD1N", //
-};
-
 ///////////////////////////// CompactMoveStorage /////////////////////////////
 
 // Добавление хода (0-3 соответствует U,R,D,L)
