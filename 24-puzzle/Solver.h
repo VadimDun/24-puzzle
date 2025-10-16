@@ -16,3 +16,5 @@ bool check_solvability(const char state[SIZE_OF_FIELD]);
 Solution solveAStar(const char start_state[SIZE_OF_FIELD], int& states_explored, Heuristic heuristic_type);
 
 Solution execute(Algorithm alg, const char input[SIZE_OF_FIELD], std::ofstream& output);
+
+Solution solveIDAStar(const char start_state[SIZE_OF_FIELD], int& states_explored, Heuristic heuristic_type);

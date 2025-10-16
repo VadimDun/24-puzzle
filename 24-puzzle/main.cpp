@@ -39,9 +39,13 @@ vector<const char*> vec5 = {
 
 Algorithm algorithms[] = {
     //Algorithm("A* Manhattan", [](const char* state, int& explored) { return solveAStar(state, explored, Heuristic::MANHATTAN); }),
-    Algorithm("A* linear", [](const char* state, int& explored) { return solveAStar(state, explored, Heuristic::LINEAR_CONFLICT); }),
-    Algorithm("A* corner", [](const char* state, int& explored) { return solveAStar(state, explored, Heuristic::CORNER_CONFLICTS); }),
-    Algorithm("A* corner&linear", [](const char* state, int& explored) { return solveAStar(state, explored, Heuristic::CORNER_LINEAR_CONFLICTS); }),
+    //Algorithm("A* linear", [](const char* state, int& explored) { return solveAStar(state, explored, Heuristic::LINEAR_CONFLICT); }),
+    //Algorithm("A* corner", [](const char* state, int& explored) { return solveAStar(state, explored, Heuristic::CORNER_CONFLICTS); }),
+    //Algorithm("A* corner&linear", [](const char* state, int& explored) { return solveAStar(state, explored, Heuristic::CORNER_LINEAR_CONFLICTS); }),
+    //Algorithm("IDA* Manhattan", [](const char* state, int& explored) { return solveIDAStar(state, explored, Heuristic::MANHATTAN); }),
+    //Algorithm("IDA* linear", [](const char* state, int& explored) { return solveIDAStar(state, explored, Heuristic::LINEAR_CONFLICT); }),
+    //Algorithm("IDA* corner", [](const char* state, int& explored) { return solveIDAStar(state, explored, Heuristic::CORNER_CONFLICTS); }),
+    Algorithm("IDA* corner&linear", [](const char* state, int& explored) { return solveIDAStar(state, explored, Heuristic::CORNER_LINEAR_CONFLICTS); }),
 };
 
 static void user_input_all_alg() {

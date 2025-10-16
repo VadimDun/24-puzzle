@@ -30,6 +30,23 @@ bool check_solvability(const char state[SIZE_OF_FIELD]) {
     else return inversions % 2 == 0;
 }
 
+Solution execute(Algorithm alg, const char input[SIZE_OF_FIELD], ofstream& output) {
+    Solution solution;
+    int states_explored = 0;
+
+    auto time = chrono::high_resolution_clock::now();
+    solution = alg.func(input, states_explored);
+    auto time1 = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::microseconds>(time1 - time).count();
+
+    cout << "Alg: " << alg.name << "; Time: " << (double)duration / 1000 << " ms" << "; \tCount of states: " << states_explored;
+
+    result(input, solution, alg.name, output, states_explored, duration);
+    cout << "==============================================" << endl;
+
+    return solution;
+}
+
 static void charToValues(GameState& gameState) {
     for (int i = 0; i < SIZE_OF_FIELD; ++i) {
         if (gameState.gameState.state[i] == '0') {
@@ -107,20 +124,95 @@ Solution solveAStar(const char start_state[SIZE_OF_FIELD], int& states_explored,
     }
     return solution;
 }
+static bool idaStarSearch(GameState& state, int threshold, int& min_exceed,
+    int& states_explored, Solution& solution,
+    unordered_set<GameStateArray, GameStateArrayHash>& visited
+) {
 
-Solution execute(Algorithm alg, const char input[SIZE_OF_FIELD], ofstream& output) {
+    states_explored++;
+    //if (states_explored % 10000 == 0) {
+    //    cout << "IDA* states: " << states_explored << " threshold: " << threshold << " g: " << state.getMovesCount() << endl;
+    //}
+
+    int f_cost = state.getFCost();
+
+    if (f_cost > threshold) {
+        if (f_cost < min_exceed) {
+            min_exceed = f_cost;
+        }
+        return false;
+    }
+
+    if (state.isSolved()) {
+        solution.moves.copyFrom(state.moves);
+        return true;
+    }
+
+    uint8_t neighbors_count = 0;
+    GameState* neighbors = state.getNextStates(neighbors_count);
+
+    vector<pair<int, GameState>> sorted_neighbors;
+    for (int i = 0; i < neighbors_count; i++) {
+        int neighbor_h = neighbors[i].getFCost();
+        sorted_neighbors.push_back(make_pair(neighbor_h, neighbors[i]));
+    }
+    
+    sort(sorted_neighbors.begin(), sorted_neighbors.end(),
+        [](const pair<int, GameState>& a, const pair<int, GameState>& b) {
+            return a.first < b.first;
+        });
+    
+    for (size_t i = 0; i < sorted_neighbors.size(); i++) {
+        GameState& neighbor = sorted_neighbors[i].second;
+        size_t neighbor_hash = GameStateArrayHash()(neighbor.gameState);
+        if (visited.find(neighbor.gameState) != visited.end())
+            continue;
+        visited.insert(neighbor.gameState);
+
+        if (idaStarSearch(neighbor, threshold, min_exceed, states_explored, solution, visited)) {
+            return true;
+        }
+        visited.erase(neighbor.gameState);
+    }
+
+    return false;
+}
+
+Solution solveIDAStar(const char start_state[SIZE_OF_FIELD], int& states_explored, Heuristic heuristic_type) {
     Solution solution;
-    int states_explored = 0;
 
-    auto time = chrono::high_resolution_clock::now();
-    solution = alg.func(input, states_explored);
-    auto time1 = chrono::high_resolution_clock::now();
-    auto duration = chrono::duration_cast<chrono::microseconds>(time1 - time).count();
+    states_explored = 0;
+    uint8_t empty_pos = get_emptyPos(start_state);
+    GameStateArray gsa(start_state);
+    charToValues(gsa);
 
-    cout << "Alg: " << alg.name << "; Time: " << (double)duration / 1000 << " ms" << "; \tCount of states: " << states_explored;
+    GameState start_game_state(gsa, empty_pos, 0, {}, heuristic_type);
 
-    result(input, solution, alg.name, output, states_explored, duration);
-    cout << "==============================================" << endl;
+    if (start_game_state.isSolved()) {
+        return solution;
+    }
+
+    int threshold = start_game_state.getFCost();
+    const int MAX_THRESHOLD = GOD_DIGIT * 2; // Увеличиваем максимальный порог
+
+    while (threshold <= GOD_DIGIT) {
+        int min_exceed = INT_MAX;
+
+        unordered_set<GameStateArray, GameStateArrayHash> visited;
+        visited.insert(start_game_state.gameState);
+
+        bool found = idaStarSearch(start_game_state, threshold, min_exceed, states_explored, solution, visited);
+
+        if (found) {
+            return solution;
+        }
+
+        if (min_exceed == INT_MAX) {
+            break;
+        }
+
+        threshold = min_exceed;
+    }
 
     return solution;
 }
