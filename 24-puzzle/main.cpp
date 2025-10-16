@@ -19,19 +19,23 @@ vector<const char*> vec4 = {
     //"7023168459ACDEBF", // 15
     //"7283160459ACDEBF", // 17
     //"7283106459ACDEBF", // 18
-    "12345678A0BE9FCD", // 19 
-    "F2345678A0BE91DC", // 33
-    "75AB2C416D389F0E", // 45
-    "FE169B4C0A73D852", // 52
-    "D79F2E8A45106C3B", // 55
-    //"BAC0F478E19623D5", // 61
+    //"12345678A0BE9FCD", // 19 
+    //"F2345678A0BE91DC", // 33
+    //"75AB2C416D389F0E", // 45
+    //"FE169B4C0A73D852", // 52
+    //"D79F2E8A45106C3B", // 55
+    "BAC0F478E19623D5", // 61
 };
 
 vector<const char*> vec5 = {
     //"123456789ABCDEFGHIJ0LMNOK", // 1
     "123456789ABCDEFGHIJKLMN0O", // 1
     //"F63M09LE51BO27IDNJACH48KG", // 1
-    "D7IMLOB2H18N4035CG9KFJ6EA", // 69
+    //"1234K6709ABC85JGHDEFLMINO", // 18
+    //"1234KH7N9AB065ELGC8JMIDOF", // 39
+    "1234F0678ANHDEOBCKJIGLM95", // 39
+    //"12853E7F9K0BN6DCAHLJGMI4O", // 39
+    //"D7IMLOB2H18N4035CG9KFJ6EA", //
     //"K12HACBO6G9E4L63JM07FDNI5", //
     //"DGC8A25HIJLM0ENB67F19KO43", //
     //"JOHIF9AL8B2E063G7M5K4CD1N", //
@@ -39,12 +43,12 @@ vector<const char*> vec5 = {
 
 Algorithm algorithms[] = {
     //Algorithm("A* Manhattan", [](const char* state, int& explored) { return solveAStar(state, explored, Heuristic::MANHATTAN); }),
-    //Algorithm("A* linear", [](const char* state, int& explored) { return solveAStar(state, explored, Heuristic::LINEAR_CONFLICT); }),
-    //Algorithm("A* corner", [](const char* state, int& explored) { return solveAStar(state, explored, Heuristic::CORNER_CONFLICTS); }),
-    //Algorithm("A* corner&linear", [](const char* state, int& explored) { return solveAStar(state, explored, Heuristic::CORNER_LINEAR_CONFLICTS); }),
-    //Algorithm("IDA* Manhattan", [](const char* state, int& explored) { return solveIDAStar(state, explored, Heuristic::MANHATTAN); }),
-    //Algorithm("IDA* linear", [](const char* state, int& explored) { return solveIDAStar(state, explored, Heuristic::LINEAR_CONFLICT); }),
-    //Algorithm("IDA* corner", [](const char* state, int& explored) { return solveIDAStar(state, explored, Heuristic::CORNER_CONFLICTS); }),
+    Algorithm("A* linear", [](const char* state, int& explored) { return solveAStar(state, explored, Heuristic::LINEAR_CONFLICT); }),
+    Algorithm("A* corner", [](const char* state, int& explored) { return solveAStar(state, explored, Heuristic::CORNER_CONFLICTS); }),
+    Algorithm("A* corner&linear", [](const char* state, int& explored) { return solveAStar(state, explored, Heuristic::CORNER_LINEAR_CONFLICTS); }),
+    Algorithm("IDA* Manhattan", [](const char* state, int& explored) { return solveIDAStar(state, explored, Heuristic::MANHATTAN); }),
+    Algorithm("IDA* linear", [](const char* state, int& explored) { return solveIDAStar(state, explored, Heuristic::LINEAR_CONFLICT); }),
+    Algorithm("IDA* corner", [](const char* state, int& explored) { return solveIDAStar(state, explored, Heuristic::CORNER_CONFLICTS); }),
     Algorithm("IDA* corner&linear", [](const char* state, int& explored) { return solveIDAStar(state, explored, Heuristic::CORNER_LINEAR_CONFLICTS); }),
 };
 

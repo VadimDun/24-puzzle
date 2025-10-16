@@ -110,24 +110,23 @@ Solution solveAStar(const char start_state[SIZE_OF_FIELD], int& states_explored,
 
         for (int i = 0; i < neighbors_count; ++i) {
             size_t neighbor_hash = GameStateArrayHash()(neighbors[i].gameState);
-            if (visited.find(neighbor_hash) != visited.end())
-                continue;
+            //if (visited.find(neighbor_hash) != visited.end())
+            //    continue;
 
             if (neighbors[i].isSolved()) {
                 solution.moves.copyFrom(neighbors[i].moves);
                 return solution;
             }
 
-            visited.insert(neighbor_hash);
+            //visited.insert(neighbor_hash);
             pr_q.push(neighbors[i]);
         }
     }
     return solution;
 }
 static bool idaStarSearch(GameState& state, int threshold, int& min_exceed,
-    int& states_explored, Solution& solution,
-    unordered_set<GameStateArray, GameStateArrayHash>& visited
-) {
+    int& states_explored, Solution& solution){
+    //unordered_set<GameStateArray, GameStateArrayHash>& visited) {
 
     states_explored++;
     //if (states_explored % 10000 == 0) {
@@ -165,14 +164,15 @@ static bool idaStarSearch(GameState& state, int threshold, int& min_exceed,
     for (size_t i = 0; i < sorted_neighbors.size(); i++) {
         GameState& neighbor = sorted_neighbors[i].second;
         size_t neighbor_hash = GameStateArrayHash()(neighbor.gameState);
-        if (visited.find(neighbor.gameState) != visited.end())
-            continue;
-        visited.insert(neighbor.gameState);
+        //if (visited.find(neighbor.gameState) != visited.end())
+        //    continue;
+        //visited.insert(neighbor.gameState);
 
-        if (idaStarSearch(neighbor, threshold, min_exceed, states_explored, solution, visited)) {
+        if (idaStarSearch(neighbor, threshold, min_exceed, states_explored, solution)) {
+        //if (idaStarSearch(neighbor, threshold, min_exceed, states_explored, solution, visited)) {
             return true;
         }
-        visited.erase(neighbor.gameState);
+        //visited.erase(neighbor.gameState);
     }
 
     return false;
@@ -198,10 +198,11 @@ Solution solveIDAStar(const char start_state[SIZE_OF_FIELD], int& states_explore
     while (threshold <= GOD_DIGIT) {
         int min_exceed = INT_MAX;
 
-        unordered_set<GameStateArray, GameStateArrayHash> visited;
-        visited.insert(start_game_state.gameState);
+        //unordered_set<GameStateArray, GameStateArrayHash> visited;
+        //visited.insert(start_game_state.gameState);
 
-        bool found = idaStarSearch(start_game_state, threshold, min_exceed, states_explored, solution, visited);
+        bool found = idaStarSearch(start_game_state, threshold, min_exceed, states_explored, solution);
+        //bool found = idaStarSearch(start_game_state, threshold, min_exceed, states_explored, solution, visited);
 
         if (found) {
             return solution;

@@ -49,13 +49,14 @@ public:
     uint8_t empty_pos;
     short g_cost;
     short h_cost;
+    int8_t prev_dir;
     CompactMoveStorage moves;
     Heuristic heuristic_type;
 
     GameState(GameStateArray st, uint8_t empty, short g = 0,
-        const CompactMoveStorage& m = CompactMoveStorage(),
-        Heuristic h = Heuristic::MANHATTAN);
-    GameState(const GameState& parent, uint8_t new_empty_pos, const CompactMoveStorage& m, Heuristic h = Heuristic::MANHATTAN);
+        const CompactMoveStorage& m = CompactMoveStorage(), Heuristic h = Heuristic::MANHATTAN);
+
+    GameState(const GameState& parent, uint8_t new_empty_pos, int8_t prev_dir, const CompactMoveStorage& m, Heuristic h = Heuristic::MANHATTAN);
 
     GameState() = default;
 
