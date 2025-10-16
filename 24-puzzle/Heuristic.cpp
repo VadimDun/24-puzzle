@@ -2,6 +2,16 @@
 
 namespace Heuristics {
 
+    const uint8_t corner1 = 0;
+    const uint8_t corner1R = 1;
+    const uint8_t corner1D = DIMENSITY;
+    const uint8_t corner2 = DIMENSITY - 1;
+    const uint8_t corner2L = DIMENSITY - 2;
+    const uint8_t corner2D = (DIMENSITY << 1) - 1;
+    const uint8_t corner3 = DIMENSITY * (DIMENSITY - 1);
+    const uint8_t corner3R = DIMENSITY * (DIMENSITY - 1) + 1;
+    const uint8_t corner3U = DIMENSITY * (DIMENSITY - 2);
+
     static short calculateManhattanDistance(const GameStateArray& gsa, uint8_t empty_pos) {
         short distance = 0;
         for (short i = 0; i < SIZE_OF_FIELD; ++i) {
@@ -15,10 +25,6 @@ namespace Heuristics {
             distance += abs(target_row - current_row) + abs(target_col - current_col);
         }
         return distance;
-    }
-
-    static short calculateLinearConflict(const GameStateArray& gsa, uint8_t empty_pos) {
-        return calculateManhattanDistance(gsa, empty_pos) + calculateLinearConflicts(gsa, empty_pos);
     }
 
     static uint8_t calculateLinearConflicts(const GameStateArray& gsa, uint8_t empty_pos) {
@@ -77,25 +83,8 @@ namespace Heuristics {
         return conflicts << 1; // *2
     }
 
-    static short calculateCornerConflict(const GameStateArray& gsa, uint8_t empty_pos) {
-        return calculateManhattanDistance(gsa, empty_pos) + calculateCornerConflicts(gsa);
-    }
-
-    static short calculateCornerLinearConflict(const GameStateArray& gsa, uint8_t empty_pos) {
-        return calculateLinearConflict(gsa, empty_pos) + calculateCornerConflicts(gsa);
-    }
-
     static short calculateCornerConflicts(const GameStateArray& gsa) {
         uint8_t res = 0;
-        uint8_t corner1 = 0;
-        uint8_t corner1R = 1;
-        uint8_t corner1D = DIMENSITY;
-        uint8_t corner2 = DIMENSITY - 1;
-        uint8_t corner2L = DIMENSITY - 2;
-        uint8_t corner2D = (DIMENSITY << 1) - 1;
-        uint8_t corner3 = DIMENSITY * (DIMENSITY - 1);
-        uint8_t corner3R = DIMENSITY * (DIMENSITY - 1) + 1;
-        uint8_t corner3U = DIMENSITY * (DIMENSITY - 2);
 
         // Значение в клетке должно быть на 1 больше индекса
         //if (!(gsa.state[corner1] == SIZE_OF_FIELD || gsa.state[corner1] == 1)) {
@@ -130,6 +119,18 @@ namespace Heuristics {
                 ++res;
         }
         return res << 1; // *2
+    }
+
+    static short calculateLinearConflict(const GameStateArray& gsa, uint8_t empty_pos) {
+        return calculateManhattanDistance(gsa, empty_pos) + calculateLinearConflicts(gsa, empty_pos);
+    }
+
+    static short calculateCornerConflict(const GameStateArray& gsa, uint8_t empty_pos) {
+        return calculateManhattanDistance(gsa, empty_pos) + calculateCornerConflicts(gsa);
+    }
+
+    static short calculateCornerLinearConflict(const GameStateArray& gsa, uint8_t empty_pos) {
+        return calculateLinearConflict(gsa, empty_pos) + calculateCornerConflicts(gsa);
     }
 
     static inline uint8_t get_emptyPos(const GameStateArray& gsa) {
@@ -314,22 +315,132 @@ namespace Heuristics {
         return (new_conflict - old_conflict) << 1;
     }
 
-    static short calculateCornerDelta(const GameStateArray& gsa, uint8_t new_empty_pos, uint8_t old_empty_pos) { return 0; }
+    static bool isPositionAffected(uint8_t corner, uint8_t adj1, uint8_t adj2, uint8_t new_empty, uint8_t old_empty) {
+        return (new_empty == adj1 || old_empty == adj1 || new_empty == corner || old_empty == corner ||
+                new_empty == adj2 || old_empty == adj2);
+    }
+
+    static char calculateCorner1Delta(const GameStateArray& gsa, uint8_t new_empty_pos, uint8_t old_empty_pos) {
+        char old_conflicts = 0;
+        char new_conflicts = 0;
+        if (!(gsa.state[corner1D] == SIZE_OF_FIELD || gsa.state[corner1] == SIZE_OF_FIELD ||
+            gsa.state[corner1R] == SIZE_OF_FIELD || gsa.state[corner1] == 1)) {
+            if (gsa.state[corner1R] == 2) {
+                if (gsa.state[corner1D] == corner1D + 1)
+                    new_conflicts += 2;
+                else ++new_conflicts;
+            }
+            else if (gsa.state[corner1D] == corner1D + 1)
+                ++new_conflicts;
+        }
+
+        GameStateArray gsaOld(gsa);
+        std::swap(gsaOld.state[new_empty_pos], gsaOld.state[old_empty_pos]);
+
+        if (!(gsaOld.state[corner1D] == SIZE_OF_FIELD || gsaOld.state[corner1] == SIZE_OF_FIELD ||
+            gsaOld.state[corner1R] == SIZE_OF_FIELD || gsaOld.state[corner1] == 1)) {
+            if (gsaOld.state[corner1R] == 2) {
+                if (gsaOld.state[corner1D] == corner1D + 1)
+                    old_conflicts += 2;
+                else ++old_conflicts;
+            }
+            else if (gsaOld.state[corner1D] == corner1D + 1)
+                ++old_conflicts;
+        }
+
+        return new_conflicts - old_conflicts;
+    }
+
+    static char calculateCorner2Delta(const GameStateArray& gsa, uint8_t new_empty_pos, uint8_t old_empty_pos) {
+        char old_conflicts = 0;
+        char new_conflicts = 0;
+        if (!(gsa.state[corner2L] == SIZE_OF_FIELD || gsa.state[corner2] == SIZE_OF_FIELD ||
+            gsa.state[corner2D] == SIZE_OF_FIELD || gsa.state[corner2] == DIMENSITY)) {
+            if (gsa.state[corner2L] == corner2) {
+                if (gsa.state[corner2D] == DIMENSITY << 1)
+                    new_conflicts += 2;
+                else ++new_conflicts;
+            }
+            else if (gsa.state[corner2D] == DIMENSITY << 1)
+                ++new_conflicts;
+        }
+
+        GameStateArray gsaOld(gsa);
+        std::swap(gsaOld.state[new_empty_pos], gsaOld.state[old_empty_pos]);
+
+        if (!(gsaOld.state[corner2L] == SIZE_OF_FIELD || gsaOld.state[corner2] == SIZE_OF_FIELD ||
+            gsaOld.state[corner2D] == SIZE_OF_FIELD || gsaOld.state[corner2] == DIMENSITY)) {
+            if (gsaOld.state[corner2L] == corner2) {
+                if (gsaOld.state[corner2D] == DIMENSITY << 1)
+                    old_conflicts += 2;
+                else ++old_conflicts;
+            }
+            else if (gsaOld.state[corner2D] == DIMENSITY << 1)
+                ++old_conflicts;
+        }
+
+        return new_conflicts - old_conflicts;
+    }
+
+    static char calculateCorner3Delta(const GameStateArray& gsa, uint8_t new_empty_pos, uint8_t old_empty_pos) {
+        char old_conflicts = 0;
+        char new_conflicts = 0;
+        if (!(gsa.state[corner3U] == SIZE_OF_FIELD || gsa.state[corner3] == SIZE_OF_FIELD ||
+            gsa.state[corner3R] == SIZE_OF_FIELD || gsa.state[corner3] == corner3R)) {
+            if (gsa.state[corner3U] == corner3U + 1) {
+                if (gsa.state[corner3R] == corner3R + 1)
+                    new_conflicts += 2;
+                else ++new_conflicts;
+            }
+            else if (gsa.state[corner3R] == corner3R + 1)
+                ++new_conflicts;
+        }
+
+        GameStateArray gsaOld(gsa);
+        std::swap(gsaOld.state[new_empty_pos], gsaOld.state[old_empty_pos]);
+
+        if (!(gsaOld.state[corner3U] == SIZE_OF_FIELD || gsaOld.state[corner3] == SIZE_OF_FIELD ||
+            gsaOld.state[corner3R] == SIZE_OF_FIELD || gsaOld.state[corner3] == corner3R)) {
+            if (gsaOld.state[corner3U] == corner3U + 1) {
+                if (gsaOld.state[corner3R] == corner3R + 1)
+                    old_conflicts += 2;
+                else ++old_conflicts;
+            }
+            else if (gsaOld.state[corner3R] == corner3R + 1)
+                ++old_conflicts;
+        }
+
+        return new_conflicts - old_conflicts;
+    }
+
+    static char calculateCornerDelta(const GameStateArray& gsa, uint8_t new_empty_pos, uint8_t old_empty_pos) {
+        char res = 0;
+        if (isPositionAffected(corner1, corner1R, corner1D, new_empty_pos, old_empty_pos)) {
+            res += calculateCorner1Delta(gsa, new_empty_pos, old_empty_pos);
+        }
+        if (isPositionAffected(corner2, corner2L, corner2D, new_empty_pos, old_empty_pos)) {
+            res += calculateCorner2Delta(gsa, new_empty_pos, old_empty_pos);
+        }
+        if (isPositionAffected(corner3, corner3R, corner3U, new_empty_pos, old_empty_pos)) {
+            res += calculateCorner3Delta(gsa, new_empty_pos, old_empty_pos);
+        }
+        return res << 1;
+    }
 
 
-    static short calculateLinearConflict(const GameStateArray& gsa, uint8_t new_empty_pos, uint8_t old_empty_pos) {
+    static char calculateLinearConflict(const GameStateArray& gsa, uint8_t new_empty_pos, uint8_t old_empty_pos) {
         return calculateManhattanDelta(gsa, new_empty_pos, old_empty_pos) + calculateLinearDelta(gsa, new_empty_pos, old_empty_pos);
     }
 
-    static short calculateCornerConflict(const GameStateArray& gsa, uint8_t new_empty_pos, uint8_t old_empty_pos) {
+    static char calculateCornerConflict(const GameStateArray& gsa, uint8_t new_empty_pos, uint8_t old_empty_pos) {
         return calculateManhattanDelta(gsa, new_empty_pos, old_empty_pos) + calculateCornerDelta(gsa, new_empty_pos, old_empty_pos);
     }
 
-    static short calculateCornerLinearConflict(const GameStateArray& gsa, uint8_t new_empty_pos, uint8_t old_empty_pos) {
-        return calculateLinearDelta(gsa, new_empty_pos, old_empty_pos) + calculateCornerDelta(gsa, new_empty_pos, old_empty_pos);
+    static char calculateCornerLinearConflict(const GameStateArray& gsa, uint8_t new_empty_pos, uint8_t old_empty_pos) {
+        return calculateLinearConflict(gsa, new_empty_pos, old_empty_pos) + calculateCornerDelta(gsa, new_empty_pos, old_empty_pos);
     }
     
-    short calculateHeuristicDelta(const GameStateArray& gsa, uint8_t new_empty_pos, uint8_t old_empty_pos, Heuristic heuristic_type) {
+    char calculateHeuristicDelta(const GameStateArray& gsa, uint8_t new_empty_pos, uint8_t old_empty_pos, Heuristic heuristic_type) {
         switch (heuristic_type) {
         case Heuristic::MANHATTAN:
             return calculateManhattanDelta(gsa, new_empty_pos, old_empty_pos);

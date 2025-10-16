@@ -4,6 +4,8 @@
 using namespace std;
 using namespace Heuristics;
 
+const int directions[4][2] = { {-1, 0}, {0, 1}, {1, 0}, {0, -1} };
+const char moveChars[4] = { 'U', 'R', 'D', 'L' };
 
 // A=10, B=11, C=12, D=13, E=14, F=15, G=16, H=17, I=18, J=19, 
 // K=20, L=21, M=22, N=23, O=24, P=25, Q=26, R=27, S=28, T=29, 
@@ -36,8 +38,6 @@ vector<const char*> vec5 = {
 
 // Добавление хода (0-3 соответствует U,R,D,L)
 void CompactMoveStorage::addMove(uint8_t move) {
-    if (moves_count >= GOD_DIGIT) return;
-
     uint8_t char_index = moves_count / MOVES_PER_CHAR;
     uint8_t bit_offset = (moves_count % MOVES_PER_CHAR) * BITS_PER_MOVE;
 
@@ -86,14 +86,12 @@ GameState::GameState(GameStateArray st, uint8_t empty, short g,
     h_cost = calculateHeuristic(st, h);
 }
 
-GameState::GameState(const GameState& parent, uint8_t new_empty_pos, char move_dir, Heuristic h)
-    : gameState(parent.gameState), empty_pos(new_empty_pos), g_cost(parent.g_cost + 1),
-    heuristic_type(h), moves(parent.moves)
+GameState::GameState(const GameState& parent, uint8_t new_empty_pos, const CompactMoveStorage& m, Heuristic h)
+    : gameState(parent.gameState), empty_pos(new_empty_pos), g_cost(parent.g_cost + 1), heuristic_type(h)
 {
     std::swap(gameState.state[parent.empty_pos], gameState.state[new_empty_pos]);
-
     h_cost = parent.h_cost + calculateHeuristicDelta(gameState, new_empty_pos, parent.empty_pos, h);
-    moves.addMove(move_dir);
+    moves.copyFrom(m);
 }
 
 short GameState::getFCost() const {
@@ -122,7 +120,11 @@ GameState* GameState::getNextStates(uint8_t& count) const {
 
             //nextStates[count] = GameState(new_state_array, new_pos, g_cost + 1, moves, heuristic_type);
             //nextStates[count].moves.addMove(i);
-            nextStates[count] = GameState(*this, new_pos, moveChars[i], heuristic_type);
+
+            CompactMoveStorage m;
+            m.copyFrom(moves);
+            m.addMove(i);
+            nextStates[count] = GameState(*this, new_pos, m , heuristic_type);
             ++count;
         }
     }

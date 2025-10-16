@@ -21,8 +21,6 @@ static constexpr uint8_t calculateGodDigit(uint8_t dimensity) {
 
 const uint8_t GOD_DIGIT = calculateGodDigit(DIMENSITY);
 const char solved[37] = "123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const int directions[4][2] = { {-1, 0}, {0, 1}, {1, 0}, {0, -1} };
-const char moveChars[4] = { 'U', 'R', 'D', 'L' };
 
 class CompactMoveStorage {
 private:
@@ -57,8 +55,7 @@ public:
     GameState(GameStateArray st, uint8_t empty, short g = 0,
         const CompactMoveStorage& m = CompactMoveStorage(),
         Heuristic h = Heuristic::MANHATTAN);
-
-    GameState(const GameState& parent, uint8_t new_empty_pos, char move_dir, Heuristic h = Heuristic::MANHATTAN);
+    GameState(const GameState& parent, uint8_t new_empty_pos, const CompactMoveStorage& m, Heuristic h = Heuristic::MANHATTAN);
 
     GameState() = default;
 

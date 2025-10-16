@@ -137,6 +137,9 @@
     <ClInclude Include="GameStateArray.h" />
     <ClInclude Include="Heuristic.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="solution.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

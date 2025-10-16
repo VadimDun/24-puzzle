@@ -226,8 +226,8 @@ struct Algorithm {
 Algorithm algorithms[] = {
     Algorithm("A* Manhattan", [](const char* state, int& explored) { return solveAStar(state, explored, Heuristic::MANHATTAN); }),
     Algorithm("A* linear", [](const char* state, int& explored) { return solveAStar(state, explored, Heuristic::LINEAR_CONFLICT); }),
-    //Algorithm("A* corner", [](const char* state, int& explored) { return solveAStar(state, explored, Heuristic::CORNER_CONFLICTS); }),
-    //Algorithm("A* corner&linear", [](const char* state, int& explored) { return solveAStar(state, explored, Heuristic::CORNER_LINEAR_CONFLICTS); }),
+    Algorithm("A* corner", [](const char* state, int& explored) { return solveAStar(state, explored, Heuristic::CORNER_CONFLICTS); }),
+    Algorithm("A* corner&linear", [](const char* state, int& explored) { return solveAStar(state, explored, Heuristic::CORNER_LINEAR_CONFLICTS); }),
 };
 
 static Solution execute(Algorithm alg, const char input[SIZE_OF_FIELD], ofstream& output) {
