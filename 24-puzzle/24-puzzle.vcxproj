@@ -130,12 +130,18 @@
     <ClCompile Include="GameState.cpp" />
     <ClCompile Include="GameStateArray.cpp" />
     <ClCompile Include="Heuristic.cpp" />
+    <ClCompile Include="Info.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Solution.cpp" />
+    <ClCompile Include="Solver.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameState.h" />
     <ClInclude Include="GameStateArray.h" />
     <ClInclude Include="Heuristic.h" />
+    <ClInclude Include="Info.h" />
+    <ClInclude Include="Solution.h" />
+    <ClInclude Include="Solver.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="solution.txt" />
